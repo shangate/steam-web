@@ -3,8 +3,8 @@ package api
 import (
 	"encoding/json"
 	"fmt"
-	"steam-web/status"
-	"steam-web/utils"
+	"github.com/shangate/steam-web/status"
+	"github.com/shangate/steam-web/utils"
 )
 
 const (

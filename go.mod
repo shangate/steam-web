@@ -1,9 +1,8 @@
-module steam-web
+module github.com/shangate/steam-web
 
 go 1.19
 
 require (
-	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/golang/protobuf v1.5.3
 	google.golang.org/protobuf v1.30.0
 )

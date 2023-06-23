@@ -2,9 +2,9 @@ package api
 
 import (
 	"fmt"
+	"github.com/shangate/steam-web/status"
+	"github.com/shangate/steam-web/utils"
 	"net/http"
-	"steam-web/status"
-	"steam-web/utils"
 )
 
 const (
