@@ -33,7 +33,6 @@ func GetUserData(session SteamCommunitySession) (useData UserData, err *status.E
 	if httpError != nil {
 		return useData, status.NewError(GET_USER_OWNED_APPS_ERROR, fmt.Sprintf("Get User owned apps error %s", httpError.Error()))
 	}
-	fmt.Println(string(responseData))
 	e := json.Unmarshal(responseData, &useData)
 	if e != nil {
 		return useData, status.NewError(STEAM_REQUEST_INCOMP, fmt.Sprintf("Data incompatible error %s", e.Error()))
@@ -52,8 +51,7 @@ func RegisterCDKey(session SteamCommunitySession, cdKey string) (bool, *status.E
 		"sessionid":   {session.SessionId},
 	}
 
-	_, _, _, responseData, _, httpError := utils.HttpWebRequest("POST", STEAM_REGISTER_CDKEY_WEBAPI, headers, query, session.Cookies, nil, false, false)
-	fmt.Println(string(responseData))
+	_, _, _, _, _, httpError := utils.HttpWebRequest("POST", STEAM_REGISTER_CDKEY_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if httpError != nil {
 		return false, status.NewError(REGISTER_CDKEY_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
 	}
