@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"github.com/shangate/steam-web/status"
 	"github.com/shangate/steam-web/utils"
-	"io/ioutil"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -273,20 +271,14 @@ func GetCurrentSteamChunk() int64 {
 func alignSteamTime() {
 	for i := 0; i < 3; i++ {
 		currentTime := time.Now().Unix()
-		resp, err := http.Post(STEAM_QUERY_TIME_WEBAPI_V1, "", nil)
+		_, _, _, resp, _, err := utils.HttpWebRequest("POST", STEAM_QUERY_TIME_WEBAPI_V1, nil, nil, nil, nil, false, false)
 		if err != nil {
 			fmt.Printf("[TimeAlligner] Error while sending request to Steam API Time: %v", err.Error())
 			time.Sleep(time.Second * 3)
 			continue
 		}
-		bodyBytes, err2 := ioutil.ReadAll(resp.Body)
-		if err2 != nil {
-			fmt.Printf("[TimeAlligner] Error while parsing response from Steam API Time: %v", err2.Error())
-			time.Sleep(time.Second * 3)
-			continue
-		}
 		var timeQuery TimeQuery
-		json.Unmarshal(bodyBytes, &timeQuery)
+		json.Unmarshal(resp, &timeQuery)
 		steamServerTimeToInt, _ := strconv.Atoi(timeQuery.Response.ServerTime)
 
 		timeDifference = int64(steamServerTimeToInt) - currentTime
