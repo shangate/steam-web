@@ -30,6 +30,13 @@ func NewError(code int, httpCode int, msg string) *HttpError {
 	}
 }
 
+var globalProxy *url.URL
+
+func SetGlobalHttpProxy(u string) (err error) {
+	globalProxy, err = url.Parse(u)
+	return err
+}
+
 func (e *HttpError) Error() string {
 	return e.ErrorMsg
 }
@@ -83,10 +90,13 @@ func HttpWebRequest(method string, requestUrl string, header url.Values,
 		TLSClientConfig:   &tls.Config{InsecureSkipVerify: insecure},
 		DisableKeepAlives: true,
 	}
+	if globalProxy != nil {
+		tr.Proxy = http.ProxyURL(globalProxy)
+	}
 
 	client := http.Client{
 		Transport: tr,
-		Timeout:   5 * time.Second,
+		Timeout:   30 * time.Second,
 	}
 	resp, e := client.Do(req)
 	var statusCode int
