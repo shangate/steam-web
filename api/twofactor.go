@@ -30,7 +30,7 @@ const (
 	STEAM_FINALIZE_AUTHENTICATOR_WEBAPI_V1 = STEAM_API_WEB_BASE + "/ITwoFactorService/FinalizeAddAuthenticator/v0001"
 	STEAM_REMOVE_AUTHENTICATOR_WEBAPI_V1   = STEAM_API_WEB_BASE + "/ITwoFactorService/RemoveAuthenticator/v0001"
 
-	STEAM_QUERY_TIME_WEBAPI_V1 = "https://api.steampowered.com/ITwoFactorService/QueryTime/v0001?steamid=0"
+	STEAM_QUERY_TIME_WEBAPI_V1 = STEAM_API_WEB_BASE + "/ITwoFactorService/QueryTime/v0001?steamid=0"
 )
 
 var (
