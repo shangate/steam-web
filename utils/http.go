@@ -31,9 +31,15 @@ func NewError(code int, httpCode int, msg string) *HttpError {
 }
 
 var globalProxy *url.URL
+var globalTransfer *url.URL
 
 func SetGlobalHttpProxy(u string) (err error) {
 	globalProxy, err = url.Parse(u)
+	return err
+}
+
+func SetGlobalHttpTransfer(u string) (err error) {
+	globalTransfer, err = url.Parse(u)
 	return err
 }
 
@@ -50,6 +56,10 @@ func HttpWebRequest(method string, requestUrl string, header url.Values,
 	responseCookies []*http.Cookie,
 	httpError *HttpError,
 ) {
+	oriRequestUrl := requestUrl
+	if globalTransfer != nil {
+		requestUrl = globalTransfer.String()
+	}
 	var queryString string
 	if len(query) > 0 {
 		queryString = query.Encode()
@@ -80,6 +90,9 @@ func HttpWebRequest(method string, requestUrl string, header url.Values,
 				req.Header.Set(k, v)
 			}
 		}
+	}
+	if globalTransfer != nil {
+		req.Header.Set("transfer_url", oriRequestUrl)
 	}
 
 	for _, cookie := range cookies {
