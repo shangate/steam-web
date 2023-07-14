@@ -214,8 +214,6 @@ func LoginFromMobile(request BeginLoginRequest) (response BeginLoginResponse, er
 	}
 	if authResponseProto.WeakToken != nil {
 		response.WeakToken = *authResponseProto.WeakToken
-	} else {
-		return response, status.NewError(AUTH_INVALID_CREDENTIALS_ERROR, "weak token is null")
 	}
 	return response, err
 }
@@ -558,7 +556,7 @@ func FinalizeLoginCommunityFromMobile(request FinalizeLoginCommunityRequest) (re
 	cookies := getDefaultMobileCooKies()
 	query := map[string][]string{
 		"nonce":     {request.RefreshToken},
-		"sessionid": {request.SessionId + "1"},
+		"sessionid": {request.SessionId},
 		"redir":     {"https://steamcommunity.com/login/home/?goto="},
 	}
 	_, _, _, responseData, responseCookies, requestError := utils.HttpWebRequest("POST", STEAM_LOGIN_FINALIZE_LOGIN, headers, query, cookies, nil, false, false)

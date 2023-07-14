@@ -17,6 +17,9 @@ const (
 	STEAM_STORE_REQUEST_ERROR = iota + 300000
 	GET_USER_OWNED_APPS_ERROR
 	REGISTER_CDKEY_ERROR
+	REGISTER_CDKEY_ALREADY_ACTIVATED_IN_THIS_ACCOUNT
+	REGISTER_CDKEY_ALREADY_ACTIVATED_IN_OTHER_ACCOUNT
+	REGISTER_CDKEY_INVALID_KEY
 )
 
 type UserData struct {
@@ -40,6 +43,15 @@ func GetUserData(session SteamCommunitySession) (useData UserData, err *status.E
 	return useData, nil
 }
 
+type registerCDKeyResponse struct {
+	Success             int `json:"success"`
+	PurchaseReceiptInfo struct {
+		PurchaseStatus int    `json:"purchase_status"`
+		ResultDetail   int    `json:"result_detail"`
+		ErrorString    string `json:"error_string"`
+	} `json:"purchase_receipt_info"`
+}
+
 func RegisterCDKey(session SteamCommunitySession, cdKey string) (bool, *status.Exception) {
 	headers := getDefaultMobileHeader()
 	if session.Cookies == nil {
@@ -51,17 +63,30 @@ func RegisterCDKey(session SteamCommunitySession, cdKey string) (bool, *status.E
 		"sessionid":   {session.SessionId},
 	}
 
-	_, _, _, _, _, httpError := utils.HttpWebRequest("POST", STEAM_REGISTER_CDKEY_WEBAPI, headers, query, session.Cookies, nil, false, false)
+	_, _, _, responseData, _, httpError := utils.HttpWebRequest("POST", STEAM_REGISTER_CDKEY_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if httpError != nil {
 		return false, status.NewError(REGISTER_CDKEY_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
 	}
-	return true, nil
+	var response registerCDKeyResponse
+	e := json.Unmarshal(responseData, &response)
+	if e != nil {
+		return false, status.NewError(REGISTER_CDKEY_ERROR, fmt.Sprintf("register cdkey error %s", e.Error()))
+	}
+	if response.Success != 1 {
+		if response.PurchaseReceiptInfo.ResultDetail == 9 {
+			return false, status.NewError(REGISTER_CDKEY_ALREADY_ACTIVATED_IN_THIS_ACCOUNT, response.PurchaseReceiptInfo.ErrorString)
+		} else if response.PurchaseReceiptInfo.ResultDetail == 15 {
+			return false, status.NewError(REGISTER_CDKEY_ALREADY_ACTIVATED_IN_OTHER_ACCOUNT, response.PurchaseReceiptInfo.ErrorString)
+		}
+		return false, status.NewError(REGISTER_CDKEY_INVALID_KEY, response.PurchaseReceiptInfo.ErrorString)
+	}
+	return response.Success == 1, nil
 }
 
-func RedeemWalletCode(session SteamCommunitySession, code string) (bool, *status.Exception) {
+func RedeemWalletCode(session *SteamCommunitySession, code string) (bool, *status.Exception) {
 	headers := getDefaultMobileHeader()
 	if session.Cookies == nil {
-		session.Cookies = getSteamAuthCookies(session)
+		session.Cookies = getSteamAuthCookies(*session)
 	}
 
 	query := map[string][]string{

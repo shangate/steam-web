@@ -1,14 +1,14 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/shangate/steam-web/status"
 	"github.com/shangate/steam-web/utils"
-	"net/http"
+	"strings"
 )
 
 const (
-	STEAM_PARENTAL_WEBAPI        = STEAM_COMMUNITY_WEB_BASE + "/parental"
 	STEAM_PARENTAL_UNLOCK_WEBAPI = STEAM_COMMUNITY_WEB_BASE + "/parental/ajaxunlock"
 )
 
@@ -16,39 +16,46 @@ const (
 	STEAM_PARENTAL_REQUEST_ERROR = iota + 600000
 )
 
-func requestParental(session SteamCommunitySession) ([]*http.Cookie, *status.Exception) {
-	headers := getDefaultMobileHeader()
-	if session.Cookies == nil {
-		session.Cookies = getSteamAuthCookies(session)
-	}
-	_, _, _, _, responseCookies, httpError := utils.HttpWebRequest("GET", STEAM_PARENTAL_WEBAPI, headers, nil, session.Cookies, nil, false, true)
-	if httpError != nil {
-		return nil, status.NewError(STEAM_PARENTAL_REQUEST_ERROR, fmt.Sprintf("Unlock parental error %s", httpError.Error()))
-	}
-	return responseCookies, nil
+type parentalResponse struct {
+	Success bool `json:"success"`
+	EResult int  `json:"eresult"`
 }
 
-func UnlockParental(session SteamCommunitySession, pin string) (bool, *status.Exception) {
-	parentalCookies, err := requestParental(session)
-	if err != nil {
-		return false, err
-	}
+func IsNeedParentalLock(session SteamCommunitySession) (bool, *status.Exception) {
 	headers := getDefaultMobileHeader()
 	if session.Cookies == nil {
 		session.Cookies = getSteamAuthCookies(session)
-		session.Cookies = append(session.Cookies, parentalCookies...)
+	}
+
+	_, _, _, responseData, _, httpError := utils.HttpWebRequest("GET", STEAM_STORE_WEB_BASE, headers, nil, session.Cookies, nil, false, false)
+	if httpError != nil {
+		return false, status.NewError(STEAM_PARENTAL_REQUEST_ERROR, fmt.Sprintf("unlock parental lock error %s", httpError.Error()))
+	}
+	return strings.Contains(string(responseData), "家庭监护") || strings.Contains(string(responseData), "Family View"), nil
+}
+
+func UnlockParentalLock(session *SteamCommunitySession, code string) (bool, *status.Exception) {
+	headers := getDefaultMobileHeader()
+	if session.Cookies == nil {
+		session.Cookies = getSteamAuthCookies(*session)
 	}
 
 	query := map[string][]string{
-		"pin":       {pin},
+		"pin":       {code},
 		"sessionid": {session.SessionId},
 	}
 
-	_, _, _, responseData, _, httpError := utils.HttpWebRequest("POST", STEAM_PARENTAL_UNLOCK_WEBAPI, headers, query, session.Cookies, nil, false, false)
+	_, _, _, responseData, responseCookies, httpError := utils.HttpWebRequest("POST", STEAM_PARENTAL_UNLOCK_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if httpError != nil {
-		return false, status.NewError(STEAM_PARENTAL_REQUEST_ERROR, fmt.Sprintf("Unlock parental error %s", httpError.Error()))
+		return false, status.NewError(STEAM_PARENTAL_REQUEST_ERROR, fmt.Sprintf("unlock parental lock error %s", httpError.Error()))
 	}
-	fmt.Println(string(responseData))
-
-	return true, nil
+	var response parentalResponse
+	e := json.Unmarshal(responseData, &response)
+	if e != nil {
+		return false, status.NewError(STEAM_PARENTAL_REQUEST_ERROR, fmt.Sprintf("unlock parental lock error %s", e.Error()))
+	}
+	if response.Success {
+		session.Cookies = append(session.Cookies, responseCookies...)
+	}
+	return response.Success, nil
 }
