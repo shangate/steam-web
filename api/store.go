@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	STEAM_USER_DATA_WEBAPI          = STEAM_STORE_WEB_BASE + "/dynamicstore/userdata"
-	STEAM_REGISTER_CDKEY_WEBAPI     = STEAM_STORE_WEB_BASE + "/account/ajaxregisterkey"
-	STEAM_REDEEM_WALLET_CODE_WEBAPI = STEAM_STORE_WEB_BASE + "/account/ajaxredeemwalletcode"
+	STEAM_USER_DATA_WEBAPI               = STEAM_STORE_WEB_BASE + "/dynamicstore/userdata"
+	STEAM_REGISTER_CDKEY_WEBAPI          = STEAM_STORE_WEB_BASE + "/account/ajaxregisterkey"
+	STEAM_REDEEM_WALLET_CODE_WEBAPI      = STEAM_STORE_WEB_BASE + "/account/ajaxredeemwalletcode"
+	STEAM_DEAUTHORIZE_ALL_DEVICES_WEBAPI = STEAM_STORE_WEB_BASE + "/twofactor/manage_action"
 )
 
 const (
@@ -99,4 +100,23 @@ func RedeemWalletCode(session *SteamCommunitySession, code string) (bool, *statu
 		return false, status.NewError(REGISTER_CDKEY_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
 	}
 	return true, nil
+}
+
+func DeauthorizeAllDevices(session SteamCommunitySession) *status.Exception {
+	headers := getDefaultMobileHeader()
+	if session.Cookies == nil {
+		session.Cookies = getSteamAuthCookies(session)
+	}
+
+	query := map[string][]string{
+		"action":    {"deauthorize"},
+		"sessionid": {session.SessionId},
+	}
+
+	_, _, _, _, _, httpError := utils.HttpWebRequest("POST", STEAM_DEAUTHORIZE_ALL_DEVICES_WEBAPI, headers, query, session.Cookies, nil, false, false)
+	if httpError != nil {
+		return status.NewError(REGISTER_CDKEY_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
+	}
+
+	return nil
 }
