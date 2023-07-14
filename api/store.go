@@ -16,7 +16,6 @@ const (
 
 const (
 	STEAM_STORE_REQUEST_ERROR = iota + 300000
-	GET_USER_OWNED_APPS_ERROR
 	REGISTER_CDKEY_ERROR
 	REGISTER_CDKEY_ALREADY_ACTIVATED_IN_THIS_ACCOUNT
 	REGISTER_CDKEY_ALREADY_ACTIVATED_IN_OTHER_ACCOUNT
@@ -35,7 +34,7 @@ func GetUserData(session SteamCommunitySession) (useData UserData, err *status.E
 
 	_, _, _, responseData, _, httpError := utils.HttpWebRequest("GET", STEAM_USER_DATA_WEBAPI, headers, nil, session.Cookies, nil, false, false)
 	if httpError != nil {
-		return useData, status.NewError(GET_USER_OWNED_APPS_ERROR, fmt.Sprintf("Get User owned apps error %s", httpError.Error()))
+		return useData, status.NewError(STEAM_STORE_REQUEST_ERROR, fmt.Sprintf("Get User owned apps error %s", httpError.Error()))
 	}
 	e := json.Unmarshal(responseData, &useData)
 	if e != nil {
@@ -66,7 +65,7 @@ func RegisterCDKey(session SteamCommunitySession, cdKey string) (bool, *status.E
 
 	_, _, _, responseData, _, httpError := utils.HttpWebRequest("POST", STEAM_REGISTER_CDKEY_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if httpError != nil {
-		return false, status.NewError(REGISTER_CDKEY_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
+		return false, status.NewError(STEAM_STORE_REQUEST_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
 	}
 	var response registerCDKeyResponse
 	e := json.Unmarshal(responseData, &response)
@@ -97,7 +96,7 @@ func RedeemWalletCode(session *SteamCommunitySession, code string) (bool, *statu
 
 	_, _, _, _, _, httpError := utils.HttpWebRequest("POST", STEAM_REDEEM_WALLET_CODE_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if httpError != nil {
-		return false, status.NewError(REGISTER_CDKEY_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
+		return false, status.NewError(STEAM_STORE_REQUEST_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
 	}
 	return true, nil
 }
@@ -115,7 +114,7 @@ func DeauthorizeAllDevices(session SteamCommunitySession) *status.Exception {
 
 	_, _, _, _, _, httpError := utils.HttpWebRequest("POST", STEAM_DEAUTHORIZE_ALL_DEVICES_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if httpError != nil {
-		return status.NewError(REGISTER_CDKEY_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
+		return status.NewError(STEAM_STORE_REQUEST_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
 	}
 
 	return nil
