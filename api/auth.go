@@ -491,10 +491,6 @@ func LoginCommunityFromMobile(request LoginCommunityRequest) (result LoginCommun
 		return result, status.NewError(STEAM_REQUEST_INCOMP, fmt.Sprintf("Data incompatible error %s", e.Error()))
 	}
 
-	if loginResponse.Message != "" {
-		return result, status.NewError(STEAM_COMMUNITY_DO_LOGIN_ERROR, loginResponse.Message)
-	}
-
 	loginResponse.SessionId = request.SessionId
 	if loginResponse.LoginComplete && loginResponse.Success {
 		steamId := loginResponse.TransferParams.SteamID
