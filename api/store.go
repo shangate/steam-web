@@ -12,6 +12,7 @@ const (
 	STEAM_REGISTER_CDKEY_WEBAPI          = STEAM_STORE_WEB_BASE + "/account/ajaxregisterkey"
 	STEAM_REDEEM_WALLET_CODE_WEBAPI      = STEAM_STORE_WEB_BASE + "/account/ajaxredeemwalletcode"
 	STEAM_DEAUTHORIZE_ALL_DEVICES_WEBAPI = STEAM_STORE_WEB_BASE + "/twofactor/manage_action"
+	STEAM_ADD_FREE_LICENSE_WEBAPI        = "https://checkout.steampowered.com/checkout/addfreelicense"
 )
 
 const (
@@ -113,6 +114,25 @@ func DeauthorizeAllDevices(session SteamCommunitySession) *status.Exception {
 	}
 
 	_, _, _, _, _, httpError := utils.HttpWebRequest("POST", STEAM_DEAUTHORIZE_ALL_DEVICES_WEBAPI, headers, query, session.Cookies, nil, false, false)
+	if httpError != nil {
+		return status.NewError(STEAM_STORE_REQUEST_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
+	}
+
+	return nil
+}
+
+func AddFreeLicense(session SteamCommunitySession, licenseId string) *status.Exception {
+	headers := getDefaultMobileHeader()
+	if session.Cookies == nil {
+		session.Cookies = getSteamAuthCookies(session)
+	}
+
+	query := map[string][]string{
+		"ajax":      {"true"},
+		"sessionid": {session.SessionId},
+	}
+
+	_, _, _, _, _, httpError := utils.HttpWebRequest("POST", STEAM_ADD_FREE_LICENSE_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if httpError != nil {
 		return status.NewError(STEAM_STORE_REQUEST_ERROR, fmt.Sprintf("register cdkey error %s", httpError.Error()))
 	}
