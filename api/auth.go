@@ -396,7 +396,6 @@ type LoginCommunityResponse struct {
 	LoginComplete     bool               `json:"login_complete"`
 	TransferParams    transferParameters `json:"transfer_parameters"`
 	CaptchaNeeded     bool               `json:"captcha_needed"`
-	CaptchaGid        int                `json:"captcha_gid"`
 	EmailSteamId      string             `json:"emailsteamid"`
 	EmailAuthNeeded   bool               `json:"emailauth_needed"`
 	RequiresTwoFactor bool               `json:"requires_twofactor"`
