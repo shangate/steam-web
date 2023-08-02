@@ -38,13 +38,16 @@ var (
 	charsLen = uint32(len(chars))
 )
 
-func GetTwoFactor(sharedSecret string) string {
-	currentSteamTime := GetSteamTime()
-
-	data, err := base64.StdEncoding.DecodeString(sharedSecret)
+func GetTwoFactor(sharedSecret string) (tfa string, err *status.Exception) {
+	currentSteamTime, err := GetSteamTime()
 	if err != nil {
-		fmt.Printf("[TwoFactor] Error while decoding shared secret: %v", err.Error())
-		return ""
+		return "", err
+	}
+
+	data, e := base64.StdEncoding.DecodeString(sharedSecret)
+	if e != nil {
+		fmt.Printf("[TwoFactor] Error while decoding shared secret: %v", e.Error())
+		return "", status.NewError(STEAM_TWOFACTOR_REQUEST_ERROR, e.Error())
 	}
 
 	ful := make([]byte, 8)
@@ -63,7 +66,7 @@ func GetTwoFactor(sharedSecret string) string {
 		slice /= charsLen
 	}
 
-	return string(buf)
+	return string(buf), nil
 }
 
 type Authenticator struct {
@@ -150,6 +153,11 @@ type finalizeAuthenticatorResponse struct {
 }
 
 func FinalizeAuthenticator(request FinalizeAuthenticatorRequest) (ok bool, err *status.Exception) {
+	steamTime, err := GetSteamTime()
+	if err != nil {
+		return false, err
+	}
+
 	headers := getDefaultMobileHeader()
 
 	query := map[string][]string{
@@ -159,7 +167,7 @@ func FinalizeAuthenticator(request FinalizeAuthenticatorRequest) (ok bool, err *
 	}
 
 	query["authenticator_code"] = []string{request.GuardCode}
-	query["authenticator_time"] = []string{strconv.FormatInt(GetSteamTime(), 10)}
+	query["authenticator_time"] = []string{strconv.FormatInt(steamTime, 10)}
 
 	_, _, _, responseData, _, e := utils.HttpWebRequest("POST", STEAM_FINALIZE_AUTHENTICATOR_WEBAPI_V1, headers, query, nil, nil, false, false)
 	if e != nil {
@@ -253,22 +261,22 @@ type TimeQuery struct {
 	} `json:"response"`
 }
 
-func GetSteamTime() int64 {
+func GetSteamTime() (t int64, err *status.Exception) {
 	if !aligned {
-		alignSteamTime()
+		err = alignSteamTime()
 	}
-	return time.Now().Unix() + timeDifference
+	return time.Now().Unix() + timeDifference, err
 }
 
-func GetCurrentSteamChunk() int64 {
-	steamTime := GetSteamTime()
+func GetCurrentSteamChunk() (int64, *status.Exception) {
+	steamTime, err := GetSteamTime()
 	currentSteamChunk := steamTime / 30
 	secondsUntilChange := steamTime - (currentSteamChunk * 30)
 
-	return 30 - secondsUntilChange
+	return 30 - secondsUntilChange, err
 }
 
-func alignSteamTime() {
+func alignSteamTime() (err *status.Exception) {
 	for i := 0; i < 3; i++ {
 		currentTime := time.Now().Unix()
 		_, _, _, resp, _, err := utils.HttpWebRequest("POST", STEAM_QUERY_TIME_WEBAPI_V1, nil, nil, nil, nil, false, false)
@@ -283,6 +291,7 @@ func alignSteamTime() {
 
 		timeDifference = int64(steamServerTimeToInt) - currentTime
 		aligned = true
-		return
+		return nil
 	}
+	return status.NewError(STEAM_REQUEST_ERROR, "align steam time error")
 }

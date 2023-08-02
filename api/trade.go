@@ -87,7 +87,10 @@ type ConfirmResponse struct {
 }
 
 func ConfirmFromMobile(session SteamCommunitySession, auth Authenticator, confirmation MobileConfirmation) (bool, *status.Exception) {
-	serverTime := GetSteamTime()
+	serverTime, err := GetSteamTime()
+	if err != nil {
+		return false, err
+	}
 	confirmationHash := getConfirmationHash(serverTime, "allow", auth.IdentitySecret)
 
 	query := map[string][]string{
@@ -130,7 +133,10 @@ func ConfirmFromMobile(session SteamCommunitySession, auth Authenticator, confir
 }
 
 func GetMobileConfirmations(session SteamCommunitySession, auth Authenticator) ([]MobileConfirmation, *status.Exception) {
-	serverTime := GetSteamTime()
+	serverTime, err := GetSteamTime()
+	if err != nil {
+		return nil, err
+	}
 	confirmationHash := getConfirmationHash(serverTime, "conf", auth.IdentitySecret)
 	query := map[string][]string{
 		"p":   {auth.DeviceId},

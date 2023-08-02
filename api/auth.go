@@ -391,16 +391,17 @@ type transferParameters struct {
 }
 
 type LoginCommunityResponse struct {
-	SessionId         string             `json:"sessionId"`
-	Success           bool               `json:"success"`
-	LoginComplete     bool               `json:"login_complete"`
-	TransferParams    transferParameters `json:"transfer_parameters"`
-	CaptchaNeeded     bool               `json:"captcha_needed"`
-	EmailSteamId      string             `json:"emailsteamid"`
-	EmailAuthNeeded   bool               `json:"emailauth_needed"`
-	RequiresTwoFactor bool               `json:"requires_twofactor"`
-	Message           string             `json:"message"`
-	Session           SteamCommunitySession
+	SessionId          string             `json:"sessionId"`
+	Success            bool               `json:"success"`
+	LoginComplete      bool               `json:"login_complete"`
+	TransferParams     transferParameters `json:"transfer_parameters"`
+	CaptchaNeeded      bool               `json:"captcha_needed"`
+	EmailSteamId       string             `json:"emailsteamid"`
+	EmailAuthNeeded    bool               `json:"emailauth_needed"`
+	RequiresTwoFactor  bool               `json:"requires_twofactor"`
+	ClearPasswordField bool               `json:"clear_password_field"`
+	Message            string             `json:"message"`
+	Session            SteamCommunitySession
 }
 
 type RsaKeyResponse struct {
