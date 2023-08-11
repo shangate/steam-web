@@ -18,9 +18,13 @@ const (
 const (
 	STEAM_STORE_REQUEST_ERROR = iota + 300000
 	REGISTER_CDKEY_ERROR
+	REGISTER_CDKEY_INCOMPATIBLE_ERROR
 	REGISTER_CDKEY_ALREADY_ACTIVATED_IN_THIS_ACCOUNT
 	REGISTER_CDKEY_ALREADY_ACTIVATED_IN_OTHER_ACCOUNT
 	REGISTER_CDKEY_INVALID_KEY
+	REGISTER_CDKEY_ACCOUNT_REGION_INCONSISTENT
+	REGISTER_CDKEY_ACCOUNT_NEED_MAIN_GAME
+	REGISTER_CDKEY_ACCOUNT_TOO_MANY_REQUEST
 )
 
 type UserData struct {
@@ -45,8 +49,9 @@ func GetUserData(session SteamCommunitySession) (useData UserData, err *status.E
 }
 
 type registerCDKeyResponse struct {
-	Success             int `json:"success"`
-	PurchaseReceiptInfo struct {
+	Success              int `json:"success"`
+	PurchaseResultDetail int `json:"purchase_result_details"`
+	PurchaseReceiptInfo  struct {
 		PurchaseStatus int    `json:"purchase_status"`
 		ResultDetail   int    `json:"result_detail"`
 		ErrorString    string `json:"error_string"`
@@ -71,13 +76,21 @@ func RegisterCDKey(session SteamCommunitySession, cdKey string) (bool, *status.E
 	var response registerCDKeyResponse
 	e := json.Unmarshal(responseData, &response)
 	if e != nil {
-		return false, status.NewError(REGISTER_CDKEY_ERROR, fmt.Sprintf("register cdkey error %s", e.Error()))
+		return false, status.NewError(REGISTER_CDKEY_INCOMPATIBLE_ERROR, fmt.Sprintf("register cdkey error %s", e.Error()))
 	}
 	if response.Success != 1 {
-		if response.PurchaseReceiptInfo.ResultDetail == 9 {
+		if response.PurchaseResultDetail == 9 {
 			return false, status.NewError(REGISTER_CDKEY_ALREADY_ACTIVATED_IN_THIS_ACCOUNT, response.PurchaseReceiptInfo.ErrorString)
-		} else if response.PurchaseReceiptInfo.ResultDetail == 15 {
+		} else if response.PurchaseResultDetail == 13 {
+			return false, status.NewError(REGISTER_CDKEY_ACCOUNT_REGION_INCONSISTENT, response.PurchaseReceiptInfo.ErrorString)
+		} else if response.PurchaseResultDetail == 14 {
+			return false, status.NewError(REGISTER_CDKEY_INVALID_KEY, response.PurchaseReceiptInfo.ErrorString)
+		} else if response.PurchaseResultDetail == 15 {
 			return false, status.NewError(REGISTER_CDKEY_ALREADY_ACTIVATED_IN_OTHER_ACCOUNT, response.PurchaseReceiptInfo.ErrorString)
+		} else if response.PurchaseResultDetail == 24 {
+			return false, status.NewError(REGISTER_CDKEY_ACCOUNT_NEED_MAIN_GAME, response.PurchaseReceiptInfo.ErrorString)
+		} else if response.PurchaseResultDetail == 53 {
+			return false, status.NewError(REGISTER_CDKEY_ACCOUNT_TOO_MANY_REQUEST, response.PurchaseReceiptInfo.ErrorString)
 		}
 		return false, status.NewError(REGISTER_CDKEY_INVALID_KEY, response.PurchaseReceiptInfo.ErrorString)
 	}
