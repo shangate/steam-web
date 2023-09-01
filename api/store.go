@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"github.com/shangate/steam-web/status"
 	"github.com/shangate/steam-web/utils"
+	"html"
+	"regexp"
+	"strconv"
 )
 
 const (
@@ -151,4 +154,38 @@ func AddFreeLicense(session SteamCommunitySession, licenseId string) *status.Exc
 	}
 
 	return nil
+}
+
+func GetAccountId(session SteamCommunitySession) (accountId string, err *status.Exception) {
+	headers := getDefaultMobileHeader()
+	if session.Cookies == nil {
+		session.Cookies = getSteamAuthCookies(session)
+	}
+
+	_, _, _, responseData, _, httpError := utils.HttpWebRequest("GET", STEAM_COMMUNITY_WEB_BASE+"/profiles/"+session.SteamId, headers, nil, session.Cookies, nil, false, false)
+	if httpError != nil {
+		return "", status.NewError(STEAM_STORE_REQUEST_ERROR, fmt.Sprintf("get account id error %s", httpError.Error()))
+	}
+	var userInfoRegex = regexp.MustCompile(`data-userinfo="({.+})`)
+	match := userInfoRegex.FindStringSubmatch(string(responseData))
+	if len(match) >= 2 {
+		jsonStr := html.UnescapeString(match[1])
+		var userInfo map[string]interface{}
+		if e := json.Unmarshal([]byte(jsonStr), &userInfo); e == nil {
+			if accountIdNum, ok := userInfo["accountid"]; ok {
+				accountIdInt := int64(0)
+				if accountIdInt, ok = accountIdNum.(int64); !ok {
+					if accountIdFloat, ok := accountIdNum.(float64); ok {
+						accountIdInt = int64(accountIdFloat)
+					}
+				}
+				if accountIdInt != 0 {
+					accountId = strconv.FormatInt(accountIdInt, 10)
+					return accountId, nil
+				}
+			}
+		}
+	}
+
+	return "", status.NewError(REGISTER_CDKEY_INCOMPATIBLE_ERROR, fmt.Sprintf("get account id error data imcompatible"))
 }
