@@ -162,7 +162,7 @@ func GetAccountId(session SteamCommunitySession) (accountId string, err *status.
 		session.Cookies = getSteamAuthCookies(session)
 	}
 
-	_, _, _, responseData, _, httpError := utils.HttpWebRequest("GET", STEAM_COMMUNITY_WEB_BASE+"/profiles/"+session.SteamId, headers, nil, session.Cookies, nil, false, false)
+	_, _, _, responseData, _, httpError := utils.HttpWebRequest("GET", STEAM_COMMUNITY_WEB_BASE, headers, nil, session.Cookies, nil, false, false)
 	if httpError != nil {
 		return "", status.NewError(STEAM_STORE_REQUEST_ERROR, fmt.Sprintf("get account id error %s", httpError.Error()))
 	}
