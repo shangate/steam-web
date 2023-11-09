@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/shangate/steam-web/status"
 	"github.com/shangate/steam-web/utils"
-	"net/http"
 )
 
 const (
@@ -35,14 +34,8 @@ func ValidatePhoneNumber(session SteamCommunitySession, phoneNumber string) *sta
 		"phoneNumber": {phoneNumber},
 		"sessionID":   {session.SessionId},
 	}
-	cookies := make([]*http.Cookie, 0)
-	for _, cookie := range session.Cookies {
-		if cookie.Domain == ".steamcommunity.com" || cookie.Domain == "steamcommunity.com" {
-			cookies = append(cookies, cookie)
-		}
-	}
 
-	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_VALIDATION_WEBAPI, headers, query, cookies, nil, false, false)
+	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_VALIDATION_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if requestError != nil {
 		return status.NewError(STEAM_REQUEST_ERROR, fmt.Sprintf("Validate phone number Error %s", requestError.Error()))
 	}
@@ -77,14 +70,8 @@ func AddPhoneNumber(session SteamCommunitySession, phoneNumber string) *status.E
 		"bisediting":  {"0"},
 		"token":       {"0"},
 	}
-	cookies := make([]*http.Cookie, 0)
-	for _, cookie := range session.Cookies {
-		if cookie.Domain == ".steamcommunity.com" || cookie.Domain == "steamcommunity.com" {
-			cookies = append(cookies, cookie)
-		}
-	}
 
-	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_ADD_WEBAPI, headers, query, cookies, nil, false, false)
+	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_ADD_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if requestError != nil {
 		return status.NewError(STEAM_REQUEST_ERROR, fmt.Sprintf("Add phone number error %s", requestError.Error()))
 	}
@@ -123,14 +110,8 @@ func CheckEmailConfirmation(session SteamCommunitySession, repeat bool) *status.
 		"bisediting":  {"0"},
 		"token":       {"0"},
 	}
-	cookies := make([]*http.Cookie, 0)
-	for _, cookie := range session.Cookies {
-		if cookie.Domain == ".steamcommunity.com" || cookie.Domain == "steamcommunity.com" {
-			cookies = append(cookies, cookie)
-		}
-	}
 
-	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_ADD_WEBAPI, headers, query, cookies, nil, false, false)
+	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_ADD_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if requestError != nil {
 		return status.NewError(STEAM_REQUEST_ERROR, fmt.Sprintf("Check email confirmation error %s", requestError.Error()))
 	}
@@ -165,14 +146,8 @@ func CheckSMSCode(session SteamCommunitySession, smsCode string) *status.Excepti
 		"bisediting":  {"0"},
 		"token":       {"0"},
 	}
-	cookies := make([]*http.Cookie, 0)
-	for _, cookie := range session.Cookies {
-		if cookie.Domain == ".steamcommunity.com" || cookie.Domain == "steamcommunity.com" {
-			cookies = append(cookies, cookie)
-		}
-	}
 
-	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_ADD_WEBAPI, headers, query, cookies, nil, false, false)
+	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_ADD_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if requestError != nil {
 		return status.NewError(STEAM_REQUEST_ERROR, fmt.Sprintf("Check sms code Error %s", requestError.Error()))
 	}
@@ -207,14 +182,7 @@ func ResendSMSCode(session SteamCommunitySession) *status.Exception {
 		"bisediting":  {"0"},
 		"token":       {"0"},
 	}
-	cookies := make([]*http.Cookie, 0)
-	for _, cookie := range session.Cookies {
-		if cookie.Domain == ".steamcommunity.com" || cookie.Domain == "steamcommunity.com" {
-			cookies = append(cookies, cookie)
-		}
-	}
-
-	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_ADD_WEBAPI, headers, query, cookies, nil, false, false)
+	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_ADD_WEBAPI, headers, query, session.Cookies, nil, false, false)
 	if requestError != nil {
 		return status.NewError(STEAM_REQUEST_ERROR, fmt.Sprintf("Resend sms code error %s", requestError.Error()))
 	}
@@ -286,13 +254,8 @@ func ResendSMSCode(session SteamCommunitySession) *status.Exception {
 //		"arg":       {"null"},
 //		"sessionid": {session.SessionId},
 //	}
-//	cookies := make([]*http.Cookie, 0)
-//	for _, cookie := range session.Cookies {
-//		if cookie.Domain == ".steamcommunity.com" || cookie.Domain == "steamcommunity.com" {
-//			cookies = append(cookies, cookie)
-//		}
-//	}
-//	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_GUARD_WEBAPI, headers, query, cookies, nil, false, false)
+//
+//	_, _, _, responseData, _, requestError := utils.HttpWebRequest("POST", STEAM_PHONE_GUARD_WEBAPI, headers, query, session.Cookies, nil, false, false)
 //	if requestError != nil {
 //		return status.NewError(STEAM_REQUEST_ERROR, fmt.Sprintf("Has phone attached Error %s", requestError.Error()))
 //	}
