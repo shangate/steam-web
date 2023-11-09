@@ -3,7 +3,9 @@ package api
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/golang/protobuf/proto"
@@ -35,6 +37,18 @@ const (
 	STEAM_COMMUNITY_FINALIZE_LOGIN_ERROR
 	STEAM_COMMUNITY_FINALIZE_LOGIN_FAIL
 )
+
+func generateSessionId() (string, error) {
+	randomBytes := make([]byte, 32)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return "", err
+	}
+	hashBytes := sha1.Sum(randomBytes)
+	hexStr := hex.EncodeToString(hashBytes[:])
+	sessionID := hexStr[:32]
+	return sessionID, nil
+}
 
 func encryptWithRSA(exponent string, modulus string, password string) (string, *status.Exception) {
 	rsaPublicKey := &rsa.PublicKey{
@@ -510,7 +524,10 @@ func LoginCommunityFromMobile(request LoginCommunityRequest) (result LoginCommun
 
 type FinalizeLoginCommunityRequest struct {
 	SessionId    string
+	SteamId      uint64
+	ClientId     uint64
 	RefreshToken string
+	AccessToken  string
 }
 
 type FinalizeLoginCommunityResponse struct {
@@ -604,5 +621,39 @@ func FinalizeLoginCommunityFromMobile(request FinalizeLoginCommunityRequest) (re
 	return FinalizeLoginCommunityResponse{
 		SessionId: request.SessionId,
 		Cookies:   responseCookies,
+	}, nil
+}
+
+func FinalizeLoginCommunity(request FinalizeLoginCommunityRequest) (response FinalizeLoginCommunityResponse, err *status.Exception) {
+	if request.SessionId == "" {
+		sessionId, e := generateSessionId()
+		if e != nil {
+			return response, status.NewError(STEAM_COMMUNITY_FINALIZE_LOGIN_ERROR, fmt.Sprintf("Do login Error %s", e.Error()))
+		}
+		request.SessionId = sessionId
+	}
+
+	session := make([]*http.Cookie, 0)
+	domains := []string{"store.steampowered.com", "help.steampowered.com", "steamcommunity.com"}
+	for _, domain := range domains {
+		session = append(session, &http.Cookie{
+			Name:   "sessionid",
+			Value:  string(request.SessionId),
+			Domain: domain,
+		})
+
+		steamIDStr := strconv.FormatUint(request.SteamId, 10)
+		cookieValue := steamIDStr + "||" + request.AccessToken
+
+		session = append(session, &http.Cookie{
+			Name:   "steamLoginSecure",
+			Value:  cookieValue,
+			Domain: domain,
+		})
+	}
+
+	return FinalizeLoginCommunityResponse{
+		SessionId: request.SessionId,
+		Cookies:   session,
 	}, nil
 }
